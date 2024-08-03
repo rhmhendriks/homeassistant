@@ -1,0 +1,85 @@
+blueprint:
+  name: Random Device Control within Time Range
+  description: Turn on a random number of selected devices within a time range and turn them off within another time range
+  domain: automation
+  input:
+    on_start_time:
+      name: On Start Time
+      description: The start of the time range to turn on devices.
+      selector:
+        time:
+    on_end_time:
+      name: On End Time
+      description: The end of the time range to turn on devices.
+      selector:
+        time:
+    off_start_time:
+      name: Off Start Time
+      description: The start of the time range to turn off devices.
+      selector:
+        time:
+    off_end_time:
+      name: Off End Time
+      description: The end of the time range to turn off devices.
+      selector:
+        time:
+    devices:
+      name: Devices
+      description: The devices to control.
+      selector:
+        entity:
+          domain: switch
+          multiple: true
+    num_devices:
+      name: Number of Devices
+      description: The number of devices to turn on.
+      selector:
+        number:
+          min: 1
+          max: 10
+          unit_of_measurement: devices
+          mode: slider
+
+variables:
+  on_start_time: !input on_start_time
+  on_end_time: !input on_end_time
+  off_start_time: !input off_start_time
+  off_end_time: !input off_end_time
+  devices: !input devices
+  num_devices: !input num_devices
+
+trigger:
+  - platform: time
+    at: !input on_start_time
+
+condition: []
+
+action:
+  - repeat:
+      count: "{{ num_devices }}"
+      sequence:
+        - delay:
+            seconds: "{{ range(0, (as_timestamp(on_end_time) - as_timestamp(on_start_time)) | int) | random }}"
+        - choose:
+            - conditions:
+                - condition: template
+                  value_template: "{{ repeat.index <= devices | length }}"
+              sequence:
+                - service: switch.turn_on
+                  target:
+                    entity_id: "{{ devices | random }}"
+  - delay:
+      seconds: "{{ range(0, (as_timestamp(off_start_time) - as_timestamp(on_end_time)) | int) | random }}"
+  - repeat:
+      count: "{{ num_devices }}"
+      sequence:
+        - delay:
+            seconds: "{{ range(0, (as_timestamp(off_end_time) - as_timestamp(off_start_time)) | int) | random }}"
+        - choose:
+            - conditions:
+                - condition: template
+                  value_template: "{{ repeat.index <= devices | length }}"
+              sequence:
+                - service: switch.turn_off
+                  target:
+                    entity_id: "{{ devices | random }}"
