@@ -27,9 +27,16 @@ blueprint:
       name: Devices
       description: The devices to control.
       selector:
-        entity:
-          domain: switch
-          multiple: true
+        target:
+          entity:
+            domain: 
+              - switch
+              - light
+              # - fan
+              # - cover
+              # - climate
+              # - media_player
+              - group
     num_devices:
       name: Number of Devices
       description: The number of devices to turn on.
